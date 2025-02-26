@@ -19,16 +19,16 @@ export class AwsCdkCrudStack extends cdk.Stack {
     // });
 
 
-        // Define the DynamoDB table
-      const studentTable =  new dynamodb.Table(this, 'StudentsTable', {
-          partitionKey: { name: 'studentId', type: dynamodb.AttributeType.STRING },
-          sortKey: { name: 'subjectName', type: dynamodb.AttributeType.STRING },
-          tableName: 'Students',
-          billingMode: dynamodb.BillingMode.PROVISIONED,
-          readCapacity: 5,
-          writeCapacity: 5,
-          removalPolicy: cdk.RemovalPolicy.DESTROY, 
-        });
+    // Define the DynamoDB table
+    const studentTable = new dynamodb.Table(this, 'StudentsTable', {
+      partitionKey: { name: 'studentId', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'subjectName', type: dynamodb.AttributeType.STRING },
+      tableName: 'Students',
+      billingMode: dynamodb.BillingMode.PROVISIONED,
+      readCapacity: 5,
+      writeCapacity: 5,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
 
     // Define the IAM role for the Lambda function
     const lambdaRole = new iam.Role(this, 'LambdaRole', {
@@ -40,7 +40,9 @@ export class AwsCdkCrudStack extends cdk.Stack {
 
     // Attach the necessary policies to the role
     lambdaRole.addToPolicy(new iam.PolicyStatement({
-      actions: ['dynamodb:PutItem'],
+      actions: ['dynamodb:PutItem',
+        'dynamodb:PartiQLInsert'
+      ],
       resources: [studentTable.tableArn],
     }));
 
@@ -48,11 +50,15 @@ export class AwsCdkCrudStack extends cdk.Stack {
     // Define the Lambda function
     const insertStudentMarksLambda = new lambda.Function(this, 'InsertStudentMarksFunction', {
       functionName: 'InsertStudentMarksFunction',
+      timeout: cdk.Duration.seconds(30),
       runtime: lambda.Runtime.NODEJS_18_X,
       handler: 'insert-student-marks.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, './lambda')),
+      environment: {
+        TABLE_NAME: studentTable.tableName,
+      },
       role: lambdaRole,
     });
- 
+
   }
 }
