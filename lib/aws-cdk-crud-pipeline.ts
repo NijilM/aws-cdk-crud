@@ -1,9 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
-import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
-import * as codebuild from 'aws-cdk-lib/aws-codebuild';
-import { CodePipelineSource, ShellStep, CodePipeline } from 'aws-cdk-lib/pipelines';
+import { CodePipeline, CodePipelineSource, ShellStep } from 'aws-cdk-lib/pipelines';
 import { AwsCdkCrudStage } from './aws-cdk-crud-stage';
 
 export class CodePipelineStack extends cdk.Stack {
@@ -19,24 +16,40 @@ export class CodePipelineStack extends cdk.Stack {
         input: CodePipelineSource.gitHub('NijilM/aws-cdk-crud', 'main', {
           authentication: cdk.SecretValue.secretsManager('github-token'),
         }),
-        commands: ['export CDK_DISABLE_VERSION_CHECK=true','npm ci', 'npm run build', 'npx cdk synth'],
-        primaryOutputDirectory: 'cdk.out',
+        commands: [
+          'export CDK_DISABLE_VERSION_CHECK=true',
+          'npm ci',
+          'npm run build',
+          'npx cdk synth'
+        ],
+      //  primaryOutputDirectory: 'cdk.out',
       }),
     });
 
-
     // Deploy to Dev stage
     const devStage = new AwsCdkCrudStage(this, 'Dev', {
-        env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-      });
+      env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+    });
+    pipeline.addStage(devStage, {
+      post: [new ShellStep('DeployToDev', {
+        commands: [
+          'export CDK_DISABLE_VERSION_CHECK=true',
+          'npx cdk deploy AwsCdkCrudStack --require-approval never'
+        ],
+      })],
+    });
 
-      pipeline.addStage(devStage, {
-        pre: [new ShellStep('DeployToDev', {
-          commands: ['export CDK_DISABLE_VERSION_CHECK=true',
-            'npx cdk deploy AwsCdkCrudStack --require-approval never'],
-        })],
-      });
-      
-    
+    // Deploy to Prod stage
+    // const prodStage = new AwsCdkCrudStage(this, 'Prod', {
+    //   env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+    // });
+    // pipeline.addStage(prodStage, {
+    //   post: [new ShellStep('DeployToProd', {
+    //     commands: [
+    //       'export CDK_DISABLE_VERSION_CHECK=true',
+    //       'npx cdk deploy AwsCdkCrudStack --require-approval never'
+    //     ],
+    //   })],
+    // });
   }
 }
