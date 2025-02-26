@@ -1,12 +1,14 @@
 import { Handler } from "aws-cdk-lib/aws-lambda";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+
 
 const client = new DynamoDBClient({});
 const dynamoDb = DynamoDBDocumentClient.from(client);
 
 
-exports.handler = async (event: any) => {
+exports.handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 
     console.log('event received : ', event);
 
@@ -47,11 +49,11 @@ exports.handler = async (event: any) => {
 
 
     } catch (error) {
-        console.error('Error occurred while inserting student', error);
+        console.error('Error occurred while inserting student mark', error);
         return {
             statusCode: 500,
             body: JSON.stringify({
-                message: 'Error occurred while inserting student',
+                message: 'Error occurred while inserting student mark',
                 error: error
             })
         };
@@ -60,16 +62,19 @@ exports.handler = async (event: any) => {
     return response;
 
     //Parsing the event
-    function getEventDetails(event: any) {
+    function getEventDetails(event: APIGatewayProxyEvent) {
         try {
-            if (!event.studentId || !event.studentName || !event.subjectName || typeof event.marks !== 'number') {
+            const body = JSON.parse(event.body!);
+            if (!body.studentId || !body.studentName || !body.subjectName || typeof body.marks !== 'number') {
                 throw new Error('Invalid event parameters');
             }
+
             return {
-                studentId: event.studentId,
-                studentName: event.studentName,
-                subjectName: event.subjectName,
-                marks: event.marks
+
+                studentId: body.studentId,
+                studentName: body.studentName,
+                subjectName: body.subjectName,
+                marks: body.marks
             };
         } catch (error) {
             console.error('Error occurred while parsing event', error);

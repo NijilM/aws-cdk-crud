@@ -4,6 +4,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as path from 'path';
+import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 export class AwsCdkCrudStack extends cdk.Stack {
@@ -40,9 +41,7 @@ export class AwsCdkCrudStack extends cdk.Stack {
 
     // Attach the necessary policies to the role
     lambdaRole.addToPolicy(new iam.PolicyStatement({
-      actions: ['dynamodb:PutItem',
-        'dynamodb:PartiQLInsert'
-      ],
+      actions: ['dynamodb:PutItem'],
       resources: [studentTable.tableArn],
     }));
 
@@ -59,6 +58,19 @@ export class AwsCdkCrudStack extends cdk.Stack {
       },
       role: lambdaRole,
     });
+
+        // Create the API Gateway
+        const api = new apigateway.RestApi(this, 'StudentMarkApi', {
+          restApiName: 'Student Mark Service',
+          description: 'This service serves student mark operations.',
+        });
+    
+        // Integrate the Lambda function with the API Gateway
+        const putIntegration = new apigateway.LambdaIntegration(insertStudentMarksLambda);
+    
+        // Create a resource and method for the PUT request
+        const studentResource = api.root.addResource('insertStudentMarks');
+        studentResource.addMethod('PUT', putIntegration); // PUT /student
 
   }
 }
