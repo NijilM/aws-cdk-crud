@@ -8,7 +8,7 @@ import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 export class AwsCdkCrudStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string,environment:string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     cdk.Tags.of(this).add('user', 'nijil');
@@ -21,10 +21,10 @@ export class AwsCdkCrudStack extends cdk.Stack {
 
 
     // Define the DynamoDB table
-    const studentTable = new dynamodb.Table(this, 'StudentsTable'+id, {
+    const studentTable = new dynamodb.Table(this, 'StudentsTable'+environment, {
       partitionKey: { name: 'studentId', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'subjectName', type: dynamodb.AttributeType.STRING },
-      tableName: 'Students'+id,
+      tableName: 'Students'+environment,
       billingMode: dynamodb.BillingMode.PROVISIONED,
       readCapacity: 5,
       writeCapacity: 5,
@@ -32,7 +32,7 @@ export class AwsCdkCrudStack extends cdk.Stack {
     });
 
     // Define the IAM role for the Lambda function
-    const lambdaRole = new iam.Role(this, 'LambdaRole'+id, {
+    const lambdaRole = new iam.Role(this, 'LambdaRole'+environment, {
       assumedBy: new iam.CompositePrincipal(
         new iam.ServicePrincipal('lambda.amazonaws.com'),
         new iam.ServicePrincipal('dynamodb.amazonaws.com')
@@ -48,7 +48,7 @@ export class AwsCdkCrudStack extends cdk.Stack {
 
     // Define the Lambda function
     const insertStudentMarksLambda = new lambda.Function(this, 'InsertStudentMarksFunction'+id, {
-      functionName: 'InsertStudentMarksFunction'+id,
+      functionName: 'InsertStudentMarksFunction'+environment,
       timeout: cdk.Duration.seconds(30),
       runtime: lambda.Runtime.NODEJS_18_X,
       handler: 'insert-student-marks.handler',
@@ -60,8 +60,8 @@ export class AwsCdkCrudStack extends cdk.Stack {
     });
 
         // Create the API Gateway
-        const api = new apigateway.RestApi(this, 'StudentMarkApi'+id, {
-          restApiName: 'Student Mark Service'+id,
+        const api = new apigateway.RestApi(this, 'StudentMarkApi'+environment, {
+          restApiName: 'Student Mark Service'+environment,
           description: 'This service serves student mark operations.',
         });
     
