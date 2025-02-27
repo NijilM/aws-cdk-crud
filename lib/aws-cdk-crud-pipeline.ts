@@ -36,6 +36,9 @@ export class CodePipelineStack extends cdk.Stack {
   
       devStage.addPost(new ShellStep('DeployToDev', {
         commands: [
+          'npm install',
+          'npm install -g aws-cdk',
+          'npx tsc',
           'npx cdk deploy AwsCdkCrudStack --require-approval never'
         ],
       }));
