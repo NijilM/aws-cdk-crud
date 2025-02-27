@@ -34,22 +34,22 @@ export class CodePipelineStack extends cdk.Stack {
         env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
       }));
   
-      devStage.addPost(new ShellStep('DeployToDev', {
-        commands: [
-          'npm install',
-          'npm install -g aws-cdk',
-          'npx tsc',
-          'npx cdk deploy AwsCdkCrudStack --require-approval never'
-        ],
-      }));
+      // devStage.addPost(new ShellStep('DeployToDev', {
+      //   commands: [
+      //     'npm install',
+      //     'npm install -g aws-cdk',
+      //     'npx tsc',
+      //     'npx cdk deploy AwsCdkCrudStack --require-approval never'
+      //   ],
+      // }));
 
  
-    // Deploy to Prod stage
-    // const prodStage = pipeline.addStage(new AwsCdkCrudStage(this, 'Prod', {
-    //     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-    //   }));
+    //Deploy to Prod stage
+    const prodStage = pipeline.addStage(new AwsCdkCrudStage(this, 'Prod', {
+        env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+      }));
   
-    //   prodStage.addPre(new ManualApprovalStep('ApproveDeploymentToProd'));
+      prodStage.addPre(new ManualApprovalStep('ApproveDeploymentToProd'));
 
     //   prodStage.addPost(new ShellStep('DeployToProd', {
     //     commands: [
