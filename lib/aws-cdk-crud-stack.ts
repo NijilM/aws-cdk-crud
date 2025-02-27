@@ -41,9 +41,7 @@ export class AwsCdkCrudStack extends cdk.Stack {
 
     // Attach the necessary policies to the role
     lambdaRole.addToPolicy(new iam.PolicyStatement({
-      actions: ['dynamodb:PutItem',
-        'dynamodb:GetItem',
-        'dynamodb:Query'],
+      actions: ['dynamodb:PutItem', 'dynamodb:GetItem', 'dynamodb:Query', 'dynamodb:DeleteItem'],
       resources: [studentTable.tableArn],
     }));
 
@@ -67,11 +65,11 @@ export class AwsCdkCrudStack extends cdk.Stack {
       description: 'This service serves student mark operations.',
     });
 
-        // Output the API Gateway endpoint
-        new cdk.CfnOutput(this, 'Student ApiGateway Endpoint', {
-          value: studentApi.url,
-          description: 'The endpoint URL for the Student API Gateway',
-        });
+    // Output the API Gateway endpoint
+    new cdk.CfnOutput(this, 'Student ApiGateway Endpoint', {
+      value: studentApi.url,
+      description: 'The endpoint URL for the Student API Gateway',
+    });
 
     // Integrate the Create Lambda function with the API Gateway
     const postIntegration = new apigateway.LambdaIntegration(insertStudentMarksLambda);
@@ -99,6 +97,24 @@ export class AwsCdkCrudStack extends cdk.Stack {
     // Create a resource and method for the GET request
     const getStudentResource = studentApi.root.addResource('getStudentMarks');
     getStudentResource.addMethod('GET', getIntegration);
+
+    // Lambda function to delete student marks based on student Id and subject
+    const deleteStudentMarksLambda = new lambda.Function(this, 'DeleteStudentMarksFunction' + id, {
+      functionName: 'DeleteStudentMarksFunction' + environment,
+      timeout: cdk.Duration.seconds(30),
+      runtime: lambda.Runtime.NODEJS_18_X,
+      handler: 'delete-student-marks.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, './lambda')),
+      environment: {
+        TABLE_NAME: studentTable.tableName,
+      },
+      role: lambdaRole,
+    });
+
+    // Integrate the Delete Lambda function with the API Gateway
+    const deleteIntegration = new apigateway.LambdaIntegration(deleteStudentMarksLambda);
+    const deleteStudentResource = studentApi.root.addResource('deleteStudentMarks');
+    deleteStudentResource.addMethod('DELETE', deleteIntegration);
 
 
   }

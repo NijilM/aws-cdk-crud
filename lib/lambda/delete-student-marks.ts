@@ -1,5 +1,5 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
 
@@ -12,39 +12,42 @@ exports.handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyRe
     console.log('event received : ', event);
 
 
-    let studentId: string;
+    let studentId: string, subjectName: string;
     let response: any;
 
     try {
-        ({ studentId } = getEventDetails(event));
+        ({ studentId, subjectName } = getEventDetails(event));
 
         console.log('Student Id : ', studentId);
 
         const params = {
             TableName: process.env.TABLE_NAME!,
-            KeyConditionExpression: 'studentId = :studentId',
-            ExpressionAttributeValues: {
-                ':studentId': studentId,
+            Key: {
+                studentId: studentId,
+                subjectName: subjectName,
             },
         };
 
-
-        let dbResponse = await dynamoDb.send(new QueryCommand(params));
+        await dynamoDb.send(new DeleteCommand(params));
 
 
         response = {
             statusCode: 200,
-            body: JSON.stringify(dbResponse.Items),
+            body: JSON.stringify({
+                message: 'Student marks deleted successfully',
+                studentId: studentId,
+                subjectName: subjectName
+            }),
 
         };
 
 
     } catch (error) {
-        console.error('Error occurred while retrieving student marks', error);
+        console.error('Error occurred while deleting the student marks', error);
         return {
             statusCode: 500,
             body: JSON.stringify({
-                message: 'Error occurred while retrieving student marks',
+                message: 'Error occurred while deleting the student marks',
                 error: error instanceof Error ? error.message : String(error)
             })
         };
@@ -56,12 +59,13 @@ exports.handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyRe
     function getEventDetails(event: APIGatewayProxyEvent) {
         try {
 
-            if (!event.queryStringParameters?.studentId) {
-                throw new Error('Invalid event parameters. Required parameter is studentId');
+            if (!event.queryStringParameters?.studentId || !event.queryStringParameters?.subjectName) {
+                throw new Error('Invalid event parameters. Required parameters are studentId and subjectName');
             }
 
             return {
-                studentId: event.queryStringParameters?.studentId
+                studentId: event.queryStringParameters?.studentId,
+                subjectName: event.queryStringParameters?.subjectName
             };
         } catch (error) {
             console.error('Error occurred while parsing event', error);
