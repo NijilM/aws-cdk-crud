@@ -20,24 +20,27 @@ export class CodePipelineStack extends cdk.Stack {
           'export CDK_DISABLE_VERSION_CHECK=true',
           'npm ci',
           'npm run build',
-          'npx cdk synth'
+          'npx cdk synth "*"'
         ],
-      //  primaryOutputDirectory: 'cdk.out',
+        primaryOutputDirectory: 'cdk.out',
       }),
+      publishAssetsInParallel: true
     });
 
     // Deploy to Dev stage
-    const devStage = new AwsCdkCrudStage(this, 'Dev', {
-      env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-    });
-    pipeline.addStage(devStage, {
-      post: [new ShellStep('DeployToDev', {
+    const devStage = pipeline.addStage(new AwsCdkCrudStage(this, 'Dev', {
+        env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+      }));
+  
+      devStage.addPost(new ShellStep('DeployToDev', {
         commands: [
           'export CDK_DISABLE_VERSION_CHECK=true',
-          'npx cdk deploy AwsCdkCrudStack --require-approval never'
+          'npx cdk deploy AwsCdkCrudStack --require-approval true'
         ],
-      })],
-    });
+      }));
+
+ 
+
 
     // Deploy to Prod stage
     // const prodStage = new AwsCdkCrudStage(this, 'Prod', {
