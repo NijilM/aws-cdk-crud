@@ -7,8 +7,8 @@ export class AwsCdkCrudStage extends cdk.Stage {
     super(scope, id, props);
 
     new AwsCdkCrudStack(this, 'AwsCdkCrudStack', {
-      stackName: 'AwsCdkCrudStack',
-      description: 'AWS CDK CRUD Stack',
+      stackName: id+'-AwsCdkCrudStack',
+      description: 'AWS CDK CRUD Stack'+id,
       env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
       tags: {
         'user': 'nijil',
