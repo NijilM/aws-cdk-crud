@@ -4,7 +4,7 @@ import { AwsCdkCrudStack } from '../lib/aws-cdk-crud-stack';
 import { CodePipelineStack } from '../lib/aws-cdk-crud-pipeline';
 
 const app = new cdk.App();
-// new AwsCdkCrudStack(app, 'AwsCdkCrudStack', {
+// new AwsCdkCrudStack(app, 'AwsCdkCrudStackTest','test', {
 //   stackName: 'AwsCdkCrudStack',
 //   description: 'AWS CDK CRUD Stack',
 //   env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },

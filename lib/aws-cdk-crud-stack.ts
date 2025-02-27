@@ -8,7 +8,7 @@ import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 export class AwsCdkCrudStack extends cdk.Stack {
-  constructor(scope: Construct, id: string,environment:string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, environment: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     cdk.Tags.of(this).add('user', 'nijil');
@@ -21,10 +21,10 @@ export class AwsCdkCrudStack extends cdk.Stack {
 
 
     // Define the DynamoDB table
-    const studentTable = new dynamodb.Table(this, 'StudentsTable'+environment, {
+    const studentTable = new dynamodb.Table(this, 'StudentsTable' + environment, {
       partitionKey: { name: 'studentId', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'subjectName', type: dynamodb.AttributeType.STRING },
-      tableName: 'Students'+environment,
+      tableName: 'Students' + environment,
       billingMode: dynamodb.BillingMode.PROVISIONED,
       readCapacity: 5,
       writeCapacity: 5,
@@ -32,7 +32,7 @@ export class AwsCdkCrudStack extends cdk.Stack {
     });
 
     // Define the IAM role for the Lambda function
-    const lambdaRole = new iam.Role(this, 'LambdaRole'+environment, {
+    const lambdaRole = new iam.Role(this, 'LambdaRole' + environment, {
       assumedBy: new iam.CompositePrincipal(
         new iam.ServicePrincipal('lambda.amazonaws.com'),
         new iam.ServicePrincipal('dynamodb.amazonaws.com')
@@ -41,14 +41,16 @@ export class AwsCdkCrudStack extends cdk.Stack {
 
     // Attach the necessary policies to the role
     lambdaRole.addToPolicy(new iam.PolicyStatement({
-      actions: ['dynamodb:PutItem'],
+      actions: ['dynamodb:PutItem',
+        'dynamodb:GetItem',
+        'dynamodb:Query'],
       resources: [studentTable.tableArn],
     }));
 
 
-    // Define the Lambda function
-    const insertStudentMarksLambda = new lambda.Function(this, 'InsertStudentMarksFunction'+id, {
-      functionName: 'InsertStudentMarksFunction'+environment,
+    //Lambda function to insert student marks
+    const insertStudentMarksLambda = new lambda.Function(this, 'InsertStudentMarksFunction' + id, {
+      functionName: 'InsertStudentMarksFunction' + environment,
       timeout: cdk.Duration.seconds(30),
       runtime: lambda.Runtime.NODEJS_18_X,
       handler: 'insert-student-marks.handler',
@@ -59,18 +61,45 @@ export class AwsCdkCrudStack extends cdk.Stack {
       role: lambdaRole,
     });
 
-        // Create the API Gateway
-        const api = new apigateway.RestApi(this, 'StudentMarkApi'+environment, {
-          restApiName: 'Student Mark Service'+environment,
-          description: 'This service serves student mark operations.',
+    // Create the API Gateway
+    const studentApi = new apigateway.RestApi(this, 'StudentMarkApi' + environment, {
+      restApiName: 'Student Mark Service' + environment,
+      description: 'This service serves student mark operations.',
+    });
+
+        // Output the API Gateway endpoint
+        new cdk.CfnOutput(this, 'Student ApiGateway Endpoint', {
+          value: studentApi.url,
+          description: 'The endpoint URL for the Student API Gateway',
         });
-    
-        // Integrate the Lambda function with the API Gateway
-        const putIntegration = new apigateway.LambdaIntegration(insertStudentMarksLambda);
-    
-        // Create a resource and method for the PUT request
-        const studentResource = api.root.addResource('insertStudentMarks');
-        studentResource.addMethod('PUT', putIntegration); // PUT /student
+
+    // Integrate the Create Lambda function with the API Gateway
+    const postIntegration = new apigateway.LambdaIntegration(insertStudentMarksLambda);
+
+    // Create a resource and method for the POST request
+    const studentResource = studentApi.root.addResource('insertStudentMarks');
+    studentResource.addMethod('POST', postIntegration);
+
+    //Lambda function to get mark of student based on Student Id and Subject
+    const getStudentMarksLambda = new lambda.Function(this, 'GetStudentMarksFunction' + environment, {
+      functionName: 'GetStudentMarksFunction' + environment,
+      timeout: cdk.Duration.seconds(30),
+      runtime: lambda.Runtime.NODEJS_18_X,
+      handler: 'get-student-marks.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, './lambda')),
+      environment: {
+        TABLE_NAME: studentTable.tableName,
+      },
+      role: lambdaRole,
+    });
+
+    // Integrate the Get Lambda function with the API Gateway
+    const getIntegration = new apigateway.LambdaIntegration(getStudentMarksLambda);
+
+    // Create a resource and method for the GET request
+    const getStudentResource = studentApi.root.addResource('getStudentMarks');
+    getStudentResource.addMethod('GET', getIntegration);
+
 
   }
 }
