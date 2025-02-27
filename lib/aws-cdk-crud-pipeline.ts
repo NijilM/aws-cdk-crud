@@ -2,7 +2,6 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { CodePipeline, CodePipelineSource, ManualApprovalStep, ShellStep } from 'aws-cdk-lib/pipelines';
 import { AwsCdkCrudStage } from './aws-cdk-crud-stage';
-import { ManualApprovalAction } from 'aws-cdk-lib/aws-codepipeline-actions';
 
 export class CodePipelineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -19,7 +18,6 @@ export class CodePipelineStack extends cdk.Stack {
         }),
         commands: [
           'npm install',
-          'npm install -g aws-cdk',
           'npm ci',
           'npm run build',
           'npx cdk synth "*"'
@@ -31,33 +29,20 @@ export class CodePipelineStack extends cdk.Stack {
 
     // Deploy to Dev stage
     const devStage = pipeline.addStage(new AwsCdkCrudStage(this, 'Dev', {
-        env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-      }));
-  
-      // devStage.addPost(new ShellStep('DeployToDev', {
-      //   commands: [
-      //     'npm install',
-      //     'npm install -g aws-cdk',
-      //     'npx tsc',
-      //     'npx cdk deploy AwsCdkCrudStack --require-approval never'
-      //   ],
-      // }));
+      env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+    }));
 
- 
+
+
     //Deploy to Prod stage
     const prodStage = pipeline.addStage(new AwsCdkCrudStage(this, 'Prod', {
-        env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-      }));
-  
-      prodStage.addPre(new ManualApprovalStep('ApproveDeploymentToProd'));
+      env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+    }));
 
-    //   prodStage.addPost(new ShellStep('DeployToProd', {
-    //     commands: [
-    //       'npx cdk deploy AwsCdkCrudStack --require-approval never'
-    //     ],
-    //   }));
+    prodStage.addPre(new ManualApprovalStep('ApproveDeploymentToProd'));
 
-     
+
+
 
   }
 }
