@@ -18,6 +18,8 @@ export class CodePipelineStack extends cdk.Stack {
           authentication: cdk.SecretValue.secretsManager('github-token'),
         }),
         commands: [
+          'npm install',
+          'npm install -g aws-cdk',
           'npm ci',
           'npm run build',
           'npx cdk synth "*"'
@@ -40,17 +42,17 @@ export class CodePipelineStack extends cdk.Stack {
 
  
     // Deploy to Prod stage
-    const prodStage = pipeline.addStage(new AwsCdkCrudStage(this, 'Prod', {
-        env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-      }));
+    // const prodStage = pipeline.addStage(new AwsCdkCrudStage(this, 'Prod', {
+    //     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+    //   }));
   
-      prodStage.addPre(new ManualApprovalStep('ApproveDeploymentToProd'));
+    //   prodStage.addPre(new ManualApprovalStep('ApproveDeploymentToProd'));
 
-      prodStage.addPost(new ShellStep('DeployToProd', {
-        commands: [
-          'npx cdk deploy AwsCdkCrudStack --require-approval never'
-        ],
-      }));
+    //   prodStage.addPost(new ShellStep('DeployToProd', {
+    //     commands: [
+    //       'npx cdk deploy AwsCdkCrudStack --require-approval never'
+    //     ],
+    //   }));
 
      
 
