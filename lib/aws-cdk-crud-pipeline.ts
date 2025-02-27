@@ -17,7 +17,6 @@ export class CodePipelineStack extends cdk.Stack {
         input: CodePipelineSource.gitHub('NijilM/aws-cdk-crud', 'main', {
           authentication: cdk.SecretValue.secretsManager('github-token'),
         }),
-        installCommands: ['npm i -g npm@latest'],
         commands: [
           'npm ci',
           'npm run build',
