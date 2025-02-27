@@ -1,7 +1,8 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { CodePipeline, CodePipelineSource, ShellStep } from 'aws-cdk-lib/pipelines';
+import { CodePipeline, CodePipelineSource, ManualApprovalStep, ShellStep } from 'aws-cdk-lib/pipelines';
 import { AwsCdkCrudStage } from './aws-cdk-crud-stage';
+import { ManualApprovalAction } from 'aws-cdk-lib/aws-codepipeline-actions';
 
 export class CodePipelineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -38,19 +39,20 @@ export class CodePipelineStack extends cdk.Stack {
       }));
 
  
-
-
     // Deploy to Prod stage
-    // const prodStage = new AwsCdkCrudStage(this, 'Prod', {
-    //   env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-    // });
-    // pipeline.addStage(prodStage, {
-    //   post: [new ShellStep('DeployToProd', {
-    //     commands: [
-    //       'export CDK_DISABLE_VERSION_CHECK=true',
-    //       'npx cdk deploy AwsCdkCrudStack --require-approval never'
-    //     ],
-    //   })],
-    // });
+    const prodStage = pipeline.addStage(new AwsCdkCrudStage(this, 'Prod', {
+        env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+      }));
+  
+      prodStage.addPre(new ManualApprovalStep('ApproveDeploymentToProd'));
+      
+      devStage.addPost(new ShellStep('DeployToProd', {
+        commands: [
+          'npx cdk deploy AwsCdkCrudStack --require-approval never'
+        ],
+      }));
+
+     
+
   }
 }
