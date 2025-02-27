@@ -21,10 +21,10 @@ export class AwsCdkCrudStack extends cdk.Stack {
 
 
     // Define the DynamoDB table
-    const studentTable = new dynamodb.Table(this, 'StudentsTable', {
+    const studentTable = new dynamodb.Table(this, 'StudentsTable'+id, {
       partitionKey: { name: 'studentId', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'subjectName', type: dynamodb.AttributeType.STRING },
-      tableName: 'Students',
+      tableName: 'Students'+id,
       billingMode: dynamodb.BillingMode.PROVISIONED,
       readCapacity: 5,
       writeCapacity: 5,
@@ -32,7 +32,7 @@ export class AwsCdkCrudStack extends cdk.Stack {
     });
 
     // Define the IAM role for the Lambda function
-    const lambdaRole = new iam.Role(this, 'LambdaRole', {
+    const lambdaRole = new iam.Role(this, 'LambdaRole'+id, {
       assumedBy: new iam.CompositePrincipal(
         new iam.ServicePrincipal('lambda.amazonaws.com'),
         new iam.ServicePrincipal('dynamodb.amazonaws.com')
@@ -47,8 +47,8 @@ export class AwsCdkCrudStack extends cdk.Stack {
 
 
     // Define the Lambda function
-    const insertStudentMarksLambda = new lambda.Function(this, 'InsertStudentMarksFunction', {
-      functionName: 'InsertStudentMarksFunction',
+    const insertStudentMarksLambda = new lambda.Function(this, 'InsertStudentMarksFunction'+id, {
+      functionName: 'InsertStudentMarksFunction'+id,
       timeout: cdk.Duration.seconds(30),
       runtime: lambda.Runtime.NODEJS_18_X,
       handler: 'insert-student-marks.handler',
@@ -60,8 +60,8 @@ export class AwsCdkCrudStack extends cdk.Stack {
     });
 
         // Create the API Gateway
-        const api = new apigateway.RestApi(this, 'StudentMarkApi', {
-          restApiName: 'Student Mark Service',
+        const api = new apigateway.RestApi(this, 'StudentMarkApi'+id, {
+          restApiName: 'Student Mark Service'+id,
           description: 'This service serves student mark operations.',
         });
     
