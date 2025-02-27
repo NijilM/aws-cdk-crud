@@ -34,14 +34,13 @@ export class AwsCdkCrudStack extends cdk.Stack {
     // Define the IAM role for the Lambda function
     const lambdaRole = new iam.Role(this, 'LambdaRole' + environment, {
       assumedBy: new iam.CompositePrincipal(
-        new iam.ServicePrincipal('lambda.amazonaws.com'),
-        new iam.ServicePrincipal('dynamodb.amazonaws.com')
+        new iam.ServicePrincipal('lambda.amazonaws.com')
       ),
     });
 
     // Attach the necessary policies to the role
     lambdaRole.addToPolicy(new iam.PolicyStatement({
-      actions: ['dynamodb:PutItem', 'dynamodb:GetItem', 'dynamodb:Query', 'dynamodb:DeleteItem'],
+      actions: ['dynamodb:PutItem', 'dynamodb:GetItem', 'dynamodb:Query', 'dynamodb:DeleteItem', 'dynamodb:UpdateItem'],
       resources: [studentTable.tableArn],
     }));
 
@@ -115,6 +114,24 @@ export class AwsCdkCrudStack extends cdk.Stack {
     const deleteIntegration = new apigateway.LambdaIntegration(deleteStudentMarksLambda);
     const deleteStudentResource = studentApi.root.addResource('deleteStudentMarks');
     deleteStudentResource.addMethod('DELETE', deleteIntegration);
+
+    // Lambda function to update student marks
+    const updateStudentMarksLambda = new lambda.Function(this, 'UpdateStudentMarksFunction' + id, {
+      functionName: 'UpdateStudentMarksFunction' + environment,
+      timeout: cdk.Duration.seconds(30),
+      runtime: lambda.Runtime.NODEJS_18_X,
+      handler: 'update-student-marks.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, './lambda')),
+      environment: {
+        TABLE_NAME: studentTable.tableName,
+      },
+      role: lambdaRole,
+    });
+
+    // Integrate the Update Lambda function with the API Gateway
+    const updateIntegration = new apigateway.LambdaIntegration(updateStudentMarksLambda);
+    const updateStudentResource = studentApi.root.addResource('updateStudentMarks');
+    updateStudentResource.addMethod('PUT', updateIntegration);
 
 
   }
