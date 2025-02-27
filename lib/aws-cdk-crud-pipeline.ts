@@ -17,7 +17,6 @@ export class CodePipelineStack extends cdk.Stack {
           authentication: cdk.SecretValue.secretsManager('github-token'),
         }),
         commands: [
-          'export CDK_DISABLE_VERSION_CHECK=true',
           'npm ci',
           'npm run build',
           'npx cdk synth "*"'
@@ -34,8 +33,7 @@ export class CodePipelineStack extends cdk.Stack {
   
       devStage.addPost(new ShellStep('DeployToDev', {
         commands: [
-          'export CDK_DISABLE_VERSION_CHECK=true',
-          'npx cdk deploy AwsCdkCrudStack --require-approval true'
+          'npx cdk deploy AwsCdkCrudStack --require-approval never'
         ],
       }));
 
