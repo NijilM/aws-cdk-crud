@@ -45,8 +45,8 @@ export class CodePipelineStack extends cdk.Stack {
       }));
   
       prodStage.addPre(new ManualApprovalStep('ApproveDeploymentToProd'));
-      
-      devStage.addPost(new ShellStep('DeployToProd', {
+
+      prodStage.addPost(new ShellStep('DeployToProd', {
         commands: [
           'npx cdk deploy AwsCdkCrudStack --require-approval never'
         ],
